@@ -18,14 +18,14 @@ uint8_t mac[] = {0x02, 0x74, 0x72, 0x69, 0x67, 0x00};
 
 EthernetUDP udp;
 
-precise_sntp sntp(udp);
+precise_sntp sntp(udp, IPAddress(192, 168, 178, 1));
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
   Serial.setTimeout(SERIAL_TIMEOUT);
   while (!Serial);
   Serial.println("-- start --");
-  Ethernet.init(5); // MKR ETH shield
+  Ethernet.init(5);
   if (Ethernet.begin(mac) == 0) {
     Serial.println("failed to configure Ethernet using DHCP");
     if (Ethernet.hardwareStatus() == EthernetNoHardware) {
@@ -41,26 +41,14 @@ void setup() {
 }
 
 void loop() {
-  Serial.println();
   sntp.update();
-  Serial.println();
+  Serial.print("epoch: ");
   Serial.print(sntp.get_epoch());
-  Serial.println(" running");
+  Serial.print(" ");
+  Serial.print(sntp.dget_epoch());
+  Serial.print(" ");
+  Serial.print(sntp.tget_epoch().seconds);
+  Serial.print("."); // this is not a decimal point!
+  Serial.println(sntp.tget_epoch().fraction);
   delay(1000);
-  Serial.print(sntp.get_epoch());
-  Serial.println(" running");
-  delay(1000);
-  Serial.print(sntp.get_epoch());
-  Serial.println(" running");
-  delay(1000);
-  Serial.print(sntp.get_epoch());
-  Serial.print(" running ");
-  static int sleep_time = 1234;
-  Serial.print("(sleep = ");
-  Serial.print(sleep_time);
-  Serial.println(")");
-  delay(sleep_time);
-  if (sleep_time < 60000) {
-    sleep_time = 2 * sleep_time;
-  }
 }

@@ -15,6 +15,11 @@ struct ntp_timestamp_format_struct { // 8 bytes
   uint32_t fraction;
 };
 
+struct timestamp_format { // 8 bytes
+  uint32_t seconds;
+  uint32_t fraction;
+};
+
 union ntp_local_clock_union {
   byte as_bytes[8];
   struct ntp_timestamp_format_struct as_timestamp;
@@ -25,12 +30,17 @@ class precise_sntp {
   precise_sntp(UDP &udp);
   precise_sntp(UDP &udp, IPAddress ntp_server_ip);
   bool update();
+  bool force_update();
   struct ntp_timestamp_format_struct _get_local_clock();
-  time_t get_epoch();
+  time_t get_epoch(); // seconds
+  double dget_epoch(); // seconds with milliseconds as fraction
+  timestamp_format tget_epoch(); // seconds + fraction of the second
  private:
   IPAddress _ntp_server_ip;
   UDP* _udp;
   uint16_t _localport = 1234;
   union ntp_local_clock_union _ntp_local_clock;
+  unsigned long _last_clock_update = 0;
   unsigned long _last_update = 0;
+  uint8_t _poll_exponent = 1;
 };
