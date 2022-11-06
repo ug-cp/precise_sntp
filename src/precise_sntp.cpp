@@ -122,41 +122,43 @@ bool precise_sntp::update() {
       return false;
     }
     // go on
-    if (_ntp_local_clock.as_timestamp.seconds == 0) {
+    const struct ntp_timestamp_format_struct t2 = ntp_packet.as_ntp_packet.rec;
+    const struct ntp_timestamp_format_struct t3 = ntp_packet.as_ntp_packet.xmt;
+    Serial.print("t1: ");
+    Serial.print(t1.seconds);
+    Serial.print(".");
+    Serial.println(t1.fraction);
+    Serial.print("t2: ");
+    Serial.print(t2.seconds);
+    Serial.print(".");
+    Serial.println(t2.fraction);
+    Serial.print("t3: ");
+    Serial.print(t3.seconds);
+    Serial.print(".");
+    Serial.println(t3.fraction);
+    Serial.print("t4: ");
+    Serial.print(t4.seconds);
+    Serial.print(".");
+    Serial.println(t4.fraction);
+    // using the own clock, we can calculate here some statistics, e. g.:
+    // offset of B relative to A:
+    uint64_t T1 = (((uint64_t) t1.seconds) << 32) + t1.fraction;
+    uint64_t T2 = (((uint64_t) t2.seconds) << 32) + t2.fraction;
+    uint64_t T3 = (((uint64_t) t3.seconds) << 32) + t3.fraction;
+    uint64_t T4 = (((uint64_t) t4.seconds) << 32) + t4.fraction;
+    int64_t theta = 0.5 * (((int64_t) T2 - (int64_t) T1) +
+			   ((int64_t) T3 - (int64_t) T4));
+    Serial.print("theta [ms]: ");
+    Serial.println((int16_t) (((theta >> 16) * 1000) >> 16));
+    Serial.print("theta [us]: ");
+    Serial.println((int16_t) (((theta >> 16) * 1000000) >> 16));
+    if (abs(theta) > (((uint64_t) 1)<<32)) {
+      // large error, we will use the transmit timestamp of the server
+      Serial.println("large error, we will use the transmit timestamp of the server");
       _ntp_local_clock.as_timestamp.seconds = ntp_packet.as_ntp_packet.xmt.seconds;
       _ntp_local_clock.as_timestamp.fraction = ntp_packet.as_ntp_packet.xmt.fraction;
       _last_update = millis();
     } else {
-      const struct ntp_timestamp_format_struct t2 = ntp_packet.as_ntp_packet.rec;
-      const struct ntp_timestamp_format_struct t3 = ntp_packet.as_ntp_packet.xmt;
-      Serial.print("t1: ");
-      Serial.print(t1.seconds);
-      Serial.print(".");
-      Serial.println(t1.fraction);
-      Serial.print("t2: ");
-      Serial.print(t2.seconds);
-      Serial.print(".");
-      Serial.println(t2.fraction);
-      Serial.print("t3: ");
-      Serial.print(t3.seconds);
-      Serial.print(".");
-      Serial.println(t3.fraction);
-      Serial.print("t4: ");
-      Serial.print(t4.seconds);
-      Serial.print(".");
-      Serial.println(t4.fraction);
-      // using the own clock, we can calculate here some statistics, e. g.:
-      // offset of B relative to A:
-      uint64_t T1 = (((uint64_t) t1.seconds) << 32) + t1.fraction;
-      uint64_t T2 = (((uint64_t) t2.seconds) << 32) + t2.fraction;
-      uint64_t T3 = (((uint64_t) t3.seconds) << 32) + t3.fraction;
-      uint64_t T4 = (((uint64_t) t4.seconds) << 32) + t4.fraction;
-      int64_t theta = 0.5 * (((int64_t) T2 - (int64_t) T1) +
-			     ((int64_t) T3 - (int64_t) T4));
-      Serial.print("theta [ms]: ");
-      Serial.println((int16_t) (((theta / (1<<16)) * 1000) / (1<<16)));
-      Serial.print("theta [us]: ");
-      Serial.println((int16_t) (((theta / (1<<16)) * 1000000) / (1<<16)));
       int64_t my_local_clock = (((uint64_t) _ntp_local_clock.as_timestamp.seconds) << 32) + _ntp_local_clock.as_timestamp.fraction;
       my_local_clock = my_local_clock + theta;
       _ntp_local_clock.as_timestamp.seconds = (uint32_t) (my_local_clock >> 32);
