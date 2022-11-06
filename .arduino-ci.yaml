@@ -1,0 +1,8 @@
+unittest:
+  platforms:
+    - zero
+compile:
+  libraries:
+    - Ethernet
+  platforms:
+    - zero
