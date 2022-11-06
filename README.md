@@ -15,10 +15,11 @@ In contrast to other implementations this library allows sub-second precision.
 
 As all (S)NTP implementation for arduino it is simplified.
 
-Since in SNTP no mitigation algorithms are done, a precision of
-sub-milliseconds is not meaningful. Therefore we concentrate here to get the
-time with a precision of a few milliseconds. The returned epoch in different
-formats is always calculated using `millis()`.
+Since in SNTP no mitigation algorithms (clock filter, clock adjust, ...) are
+done, a precision of sub-milliseconds is not meaningful.
+Therefore we concentrate here to get the time with a precision of a
+few milliseconds. The returned epoch in different formats is always
+calculated using `millis()`.
 
 ## Install
 
