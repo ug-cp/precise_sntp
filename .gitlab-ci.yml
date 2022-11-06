@@ -1,0 +1,93 @@
+variables:
+  DEBIAN_FRONTEND: noninteractive
+  APT_GET_INSTALL: "apt-get install --no-install-recommends -q -y"
+
+stages:
+  - check_coding_style
+  - test_build
+  - release
+  - deploy
+
+pre-commit:
+  stage: check_coding_style
+  image:
+    # https://hub.docker.com/_/alpine
+    name: alpine:latest
+  script:
+    - date
+    # install necessary packages:
+    - apk add --no-cache bash gcc git libc-dev npm py3-pip python3-dev
+    - pip3 install pre-commit
+    - pre-commit --version
+    - pre-commit run --all-files
+
+arduino-lint:
+  stage: check_coding_style
+  image:
+    # https://hub.docker.com/_/debian
+    name: debian:latest
+  script:
+    - date
+    - apt-get update
+    - $APT_GET_INSTALL curl ca-certificates
+    - (cd && curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/etc/install.sh | sh)
+    - ~/bin/arduino-lint --version
+    - ~/bin/arduino-lint --library-manager submit
+    #- ~/bin/arduino-lint --compliance strict --library-manager submit
+    #- ~/bin/arduino-lint --compliance strict --library-manager update
+
+arduino_ci:
+  stage: test_build
+  image:
+    # https://hub.docker.com/_/ubuntu
+    name: ubuntu:18.04
+  script:
+    - date
+    - apt-get update
+    - $APT_GET_INSTALL ruby build-essential
+    - gem install bundler arduino_ci
+    - export EXPECT_UNITTESTS=1
+    - export EXPECT_EXAMPLES=1
+    - arduino_ci.rb
+
+prepare_release:
+  stage: test_build
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  image:
+    # https://hub.docker.com/_/alpine
+    name: alpine:latest
+  script:
+    - date
+    - cat library.properties
+    - echo "EXTRA_DESCRIPTION=$(grep sentence library.properties | cut -d "=" -f 2) $(grep paragraph library.properties | cut -d '=' -f 2)" > variables.env
+    - echo "TAG=$(grep version library.properties | cut -d "=" -f 2)" >> variables.env
+    - cat variables.env
+  artifacts:
+    reports:
+      dotenv: variables.env
+
+release_job:
+  stage: release
+  image:
+    # https://docs.gitlab.com/ee/user/project/releases/release_cicd_examples.html#create-release-metadata-in-a-custom-script
+    registry.gitlab.com/gitlab-org/release-cli:latest
+  needs:
+    - job: arduino-lint
+    - job: arduino_ci
+    - job: prepare_release
+      artifacts: true
+  rules:
+    - if: $CI_COMMIT_TAG
+      when: never
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  script:
+    - date
+    - echo "running release_job for $TAG"
+  release:
+    name: 'Release $TAG'
+    description: '$EXTRA_DESCRIPTION'
+    tag_name: '$TAG'
+    ref: '$CI_COMMIT_SHA'

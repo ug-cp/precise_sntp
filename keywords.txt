@@ -1,0 +1,9 @@
+# Syntax Coloring Map For precise_sntp
+
+# Datatypes (KEYWORD1)
+
+# Methods and Functions (KEYWORD2)
+
+# Instances (KEYWORD2)
+
+# Constants (LITERAL1)
