@@ -84,16 +84,18 @@ precise_sntp::precise_sntp(UDP &udp, IPAddress ntp_server_ip) {
   memset(_ntp_local_clock.as_bytes, 0, 8);
 }
 
-bool precise_sntp::update() {
+uint8_t precise_sntp::update() {
   if ((_last_update > 0) &&
       (_last_update + 1000 * (1 << _poll_exponent) > millis())) {
-    return false;
+    return 1;
   }
   return force_update();
 }
 
-bool precise_sntp::force_update() {
+uint8_t precise_sntp::force_update() {
+#ifdef PRECISE_SNTP_DEBUG
   Serial.println("update");
+#endif
   union ntp_packet_union ntp_packet;
   memset(ntp_packet.as_bytes, 0, NTP_PACKET_SIZE);
   // set leap=3 (no warning), version=4, mode=3 (client):
@@ -105,20 +107,28 @@ bool precise_sntp::force_update() {
   ntp_packet.as_ntp_packet.xmt = t1;
   ntp_timestamp_format_hton(&(ntp_packet.as_ntp_packet.xmt));
   if (_udp->begin(_localport) != 1) {
-    Serial.println("localport not working");
-    return false;
+#ifdef PRECISE_SNTP_DEBUG
+    Serial.println("_localport not working");
+#endif
+    return 2;
   }
   if (_udp->beginPacket(_ntp_server_ip, 123) != 1) {
+#ifdef PRECISE_SNTP_DEBUG
     Serial.println("cannot start connection");
-    return false;
+#endif
+    return 3;
   }
   if (_udp->write(ntp_packet.as_bytes, NTP_PACKET_SIZE) != NTP_PACKET_SIZE) {
+#ifdef PRECISE_SNTP_DEBUG
     Serial.println("problems writing data");
-    return false;
+#endif
+    return 4;
   }
   if (_udp->endPacket() != 1) {
+#ifdef PRECISE_SNTP_DEBUG
     Serial.println("packet was not send");
-    return false;
+#endif
+    return 5;
   }
   unsigned long start_waiting = millis();
   int packetSize;
@@ -126,8 +136,10 @@ bool precise_sntp::force_update() {
 	 (start_waiting + 1000)) {
   }
   if (packetSize != NTP_PACKET_SIZE) {
-    Serial.println("got no answer");
-    return false;
+#ifdef PRECISE_SNTP_DEBUG
+    Serial.println("got no answer from server");
+#endif
+    return 6;
   }
   const struct ntp_timestamp_format_struct t4 = _get_local_clock();
   _udp->read(ntp_packet.as_bytes, NTP_PACKET_SIZE);
@@ -141,7 +153,17 @@ bool precise_sntp::force_update() {
   // sanity check
   if ((t1.seconds != ntp_packet.as_ntp_packet.org.seconds) ||
       (t1.fraction != ntp_packet.as_ntp_packet.org.fraction)) {
-    return false;
+#ifdef PRECISE_SNTP_DEBUG
+    Serial.println("sanity check fail, answer from server is bogus");
+#endif
+    return 7;
+  }
+  if ((ntp_packet.as_ntp_packet.stratum < 1) ||
+      (15 < ntp_packet.as_ntp_packet.stratum)) {
+#ifdef PRECISE_SNTP_DEBUG
+    Serial.println("sanity check fail, server is not syncronized");
+#endif
+    return 8;
   }
   // go on
   _last_update = millis();
@@ -151,6 +173,7 @@ bool precise_sntp::force_update() {
       (ntp_packet.as_ntp_packet.poll < 17)) {
     _poll_exponent = ntp_packet.as_ntp_packet.poll;
   }
+#ifdef PRECISE_SNTP_DEBUG
   Serial.print("t1: ");
   Serial.print(t1.seconds);
   Serial.print(".");
@@ -167,6 +190,7 @@ bool precise_sntp::force_update() {
   Serial.print(t4.seconds);
   Serial.print(".");
   Serial.println(t4.fraction);
+#endif
   // using the own clock, we can calculate here some statistics, e. g.:
   // offset of B relative to A:
   const uint64_t T1 = (((uint64_t) t1.seconds) << 32) + t1.fraction;
@@ -176,6 +200,7 @@ bool precise_sntp::force_update() {
   // theta = 0.5 * (T2+T3) - 0.5 * (T1+T4)
   const int64_t theta = 0.5 * (((int64_t) T2 - (int64_t) T1) +
 			       ((int64_t) T3 - (int64_t) T4));
+#ifdef PRECISE_SNTP_DEBUG
   Serial.print("theta [ms]: ");
   Serial.println((int16_t) (((theta >> 16) * 1000) >> 16));
   Serial.print("theta [us]: ");
@@ -189,9 +214,12 @@ bool precise_sntp::force_update() {
   Serial.println(ntp_packet.as_ntp_packet.poll);
   Serial.print("statum: ");
   Serial.println(ntp_packet.as_ntp_packet.stratum);
-  if (abs(theta) > (((uint64_t) 1)<<32)) {
+#endif
+  if (((uint64_t) abs(theta)) > (((uint64_t) 1)<<32)) {
     // large error, we will use the transmit timestamp of the server
+#ifdef PRECISE_SNTP_DEBUG
     Serial.println("large error, we will use the transmit timestamp of the server");
+#endif
     _ntp_local_clock.as_timestamp.seconds = ntp_packet.as_ntp_packet.xmt.seconds;
     _ntp_local_clock.as_timestamp.fraction = ntp_packet.as_ntp_packet.xmt.fraction;
     _last_clock_update = millis();
@@ -202,7 +230,7 @@ bool precise_sntp::force_update() {
     _ntp_local_clock.as_timestamp.fraction =
       (uint32_t) (my_local_clock & 0x00000000FFFFFFFFULL);
   }
-
+#ifdef PRECISE_SNTP_DEBUG
   Serial.print(" reftime ");
   Serial.println(ntp_packet.as_ntp_packet.reftime.seconds);
   Serial.print(" org ");
@@ -211,7 +239,6 @@ bool precise_sntp::force_update() {
   Serial.println(ntp_packet.as_ntp_packet.rec.seconds);
   Serial.print(" xmt ");
   Serial.println(ntp_packet.as_ntp_packet.xmt.seconds);
-    
   uint32_t epoch = _ntp_local_clock.as_timestamp.seconds - 2208988800UL;
   uint16_t epoch_milli = (uint16_t) (((float) 1000) * (((float) (_ntp_local_clock.as_timestamp.fraction >> 22)) / ((float) (1<<10))));
   Serial.print(epoch);
@@ -226,19 +253,15 @@ bool precise_sntp::force_update() {
   double fepoch = (double) epoch + ((double) _ntp_local_clock.as_timestamp.fraction) / ((double) 4294967295UL); // ~= seconds + fraction / (2**32)
   Serial.print(" ");
   Serial.println(fepoch);
-  return true;
+#endif
+  return 0;
 }
 
 struct ntp_timestamp_format_struct precise_sntp::_get_local_clock() {
-  struct ntp_timestamp_format_struct now = _ntp_local_clock.as_timestamp;
-  const unsigned long off = millis() - _last_clock_update;
-  const unsigned long off_seconds = off / 1000;
-  now.seconds += off_seconds;
-  // milli * 2**32 / 1e3 = fraction
-  const uint32_t fraction = ((((uint32_t) (off - 1000 * off_seconds)) * (1<<16)) / 1000) * (1<<16);
-  if (__builtin_uaddl_overflow(now.fraction, fraction, &now.fraction)) {
-    now.seconds++;
-  }
+  const uint64_t my_local_clock = (int64_t) _ntp_local_clock_union2uint64(_ntp_local_clock) + ((((((uint64_t) (millis() - _last_clock_update)) << 16)) / 1000) << 16);
+  struct ntp_timestamp_format_struct now;
+  now.seconds = (uint32_t) (my_local_clock >> 32);
+  now.fraction = (uint32_t) (my_local_clock & 0x00000000FFFFFFFFULL);
   return now;
 }
 
