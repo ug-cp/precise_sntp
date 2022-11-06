@@ -45,7 +45,7 @@ class precise_sntp {
     Get time from server.
 
     returns an error code:
-    
+
     0: success
     1: poll policy does not allow fast updates, skip communication with server
     2: cannot use local port _localport
@@ -63,7 +63,7 @@ class precise_sntp {
     local time server for debugging purpose.
 
     returns an error code:
-    
+
     0: success
     1: poll policy does not allow fast updates, skip communication with server
     2: cannot use local port _localport
