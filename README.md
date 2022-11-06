@@ -11,9 +11,14 @@ license: BSD 3-Clause License
 This library is an implementation of the Simple Network Time Protocol (SNTPv4)
 for the arduino platform.
 
-In contrast to other implementations this library allows subseconds precision.
+In contrast to other implementations this library allows sub-second precision.
 
 As all (S)NTP implementation for arduino it is simplified.
+
+Since in SNTP no mitigation algorithms are done, a precision of
+sub-milliseconds is not meaningful. Therefore we concentrate here to get the
+time with a precision of a few milliseconds. The returned epoch in different
+formats is always calculated using `millis()`.
 
 ## Install
 
