@@ -48,8 +48,9 @@ arduino_ci:
     - export EXPECT_UNITTESTS=1
     - export EXPECT_EXAMPLES=1
     - arduino_ci.rb --skip-unittests
-    - echo
-    - arduino_ci.rb
+    - echo "mock Udp.h for unittests"
+    - mv src/udp_mock.h src/Udp.h
+    - arduino_ci.rb --skip-examples-compilation
 
 prepare_release:
   stage: test_build
