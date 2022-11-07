@@ -2,11 +2,11 @@
   Author: Daniel Mohr
   Date: 2022-11-07
 
-  Since src/precise_sntp.cpp is compiled together with this unittest
+  Since src/precise_sntp.cpp is compiled together with the unittest
   test/unit_test_htonl_htons.cpp, we have to make at least the compiling
   working.
 
-  For the unittest this file is used instead of Udp.h.
+  For the unittest this file mocks the part of Udp.h we need.
 */
 
 class UDP {

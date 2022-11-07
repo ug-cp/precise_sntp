@@ -8,7 +8,7 @@
 #pragma once
 
 #include <Arduino.h>
-#include "Udp.h"
+#include <Udp.h>
 
 // if PRECISE_SNTP_DEBUG exists debugging output to serial console is done
 // #define PRECISE_SNTP_DEBUG

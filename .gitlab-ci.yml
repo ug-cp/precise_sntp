@@ -47,10 +47,9 @@ arduino_ci:
     - gem install bundler arduino_ci
     - export EXPECT_UNITTESTS=1
     - export EXPECT_EXAMPLES=1
-    - arduino_ci.rb --skip-unittests
     - echo "mock Udp.h for unittests"
-    - mv src/udp_mock.h src/Udp.h
-    - arduino_ci.rb --skip-examples-compilation
+    - cp -p extras/udp_mock.h /var/lib/gems/*/gems/arduino_ci-*/cpp/arduino/Udp.h
+    - arduino_ci.rb
 
 prepare_release:
   stage: test_build
