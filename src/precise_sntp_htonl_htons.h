@@ -22,8 +22,8 @@
 #endif
 
 #ifndef htons
-#define htons(i) ( (((i)<<8) & 0xF0) | \
-		   (((i)>>8) & 0x0F) )
+#define htons(i) ( (((i)<<8) & 0xFF00) | \
+		   (((i)>>8) & 0x00FF) )
 #endif
 
 #ifndef ntohs
