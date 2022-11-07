@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-06
+  Date: 2022-11-07
 
   For more information look at the README.md.
 
@@ -9,25 +9,7 @@
 
 #include <precise_sntp.h>
 
-#ifndef htonl
-#define htonl(i) ( (((i)<<24) & 0xFF000000UL) | \
-                   (((i)<< 8) & 0x00FF0000UL) | \
-                   (((i)>> 8) & 0x0000FF00UL) | \
-                   (((i)>>24) & 0x000000FFUL) )
-#endif
-
-#ifndef ntohl
-#define ntohl htonl
-#endif
-
-#ifndef htons
-#define htons(i) ( (((i)<<8) & 0xF0) | \
-		   (((i)>>8) & 0x0F) )
-#endif
-
-#ifndef ntohs
-#define ntohs htons
-#endif
+#include <precise_sntp_htonl_htons.h>
 
 #define NTP_PACKET_SIZE 48
 
