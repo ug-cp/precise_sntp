@@ -48,6 +48,8 @@ arduino_ci:
     - gem install bundler arduino_ci
     - export EXPECT_UNITTESTS=1
     - export EXPECT_EXAMPLES=1
+    - arduino_ci.rb --skip-unittests
+    - echo
     - arduino_ci.rb
 
 prepare_release:
