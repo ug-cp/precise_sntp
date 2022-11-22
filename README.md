@@ -1,6 +1,6 @@
 ---
 author: Daniel Mohr
-date: 2022-11-06
+date: 2022-11-08
 license: BSD 3-Clause License
 ---
 
@@ -18,8 +18,15 @@ As all (S)NTP implementation for arduino it is simplified.
 Since in SNTP no mitigation algorithms (clock filter, clock adjust, ...) are
 done, a precision of sub-milliseconds is not meaningful.
 Therefore we concentrate here to get the time with a precision of a
-few milliseconds. The returned epoch in different formats is always
-calculated using `millis()`.
+few milliseconds.
+
+The returned epoch in different formats is always calculated using `millis()`.
+`millis()` will overflow after about 50 days and the returned epoch is not
+correct anymore. To overcome this you have to call `update` and correct the
+time using an (S)NTP server.
+
+Since no clock adjust is done, the time is not always continuous. Every time
+the time is updated from a time server the time could jump.
 
 ## Install
 
