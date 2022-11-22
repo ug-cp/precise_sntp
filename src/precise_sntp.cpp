@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-08
+  Date: 2022-11-22
 
   For more information look at the README.md.
 
@@ -54,14 +54,20 @@ static inline void ntp_timestamp_format_hton(ntp_timestamp_format_struct *t) {
 
 precise_sntp::precise_sntp(UDP &udp) {
   _udp = &udp;
-  IPAddress ntpip(192, 168, 178, 1);
-  _ntp_server_ip = ntpip;
+  _ntp_server_name = "pool.ntp.org";
   memset(_ntp_local_clock.as_bytes, 0, 8);
 }
 
 precise_sntp::precise_sntp(UDP &udp, IPAddress ntp_server_ip) {
   _udp = &udp;
   _ntp_server_ip = ntp_server_ip;
+  _ntp_server_name = NULL;
+  memset(_ntp_local_clock.as_bytes, 0, 8);
+}
+
+precise_sntp::precise_sntp(UDP &udp, const char* ntp_server_name) {
+  _udp = &udp;
+  _ntp_server_name = ntp_server_name;
   memset(_ntp_local_clock.as_bytes, 0, 8);
 }
 
@@ -93,11 +99,20 @@ uint8_t precise_sntp::force_update() {
 #endif
     return 2;
   }
-  if (_udp->beginPacket(_ntp_server_ip, 123) != 1) {
+  if (_ntp_server_name) {
+    if (_udp->beginPacket(_ntp_server_name, 123) != 1) {
 #ifdef PRECISE_SNTP_DEBUG
-    Serial.println("cannot start connection");
+      Serial.println("cannot start connection");
 #endif
-    return 3;
+      return 3;
+    }
+  } else {
+    if (_udp->beginPacket(_ntp_server_ip, 123) != 1) {
+#ifdef PRECISE_SNTP_DEBUG
+      Serial.println("cannot start connection");
+#endif
+      return 3;
+    }
   }
   if (_udp->write(ntp_packet.as_bytes, NTP_PACKET_SIZE) != NTP_PACKET_SIZE) {
 #ifdef PRECISE_SNTP_DEBUG
@@ -280,4 +295,15 @@ timestamp_format precise_sntp::tget_epoch() {
   now.seconds = ntp_timestamp_seconds2epoch(ntp_now);
   now.fraction = ntp_now.fraction;
   return now;
+}
+unsigned long precise_sntp::get_last_update() {
+  return _last_update;
+}
+
+bool precise_sntp::is_synchronized() {
+  if ((_last_update > 0) &&
+      (_last_update + 1000 * (1 << _poll_exponent) > millis())) {
+    return true;
+  }
+  return false;
 }
