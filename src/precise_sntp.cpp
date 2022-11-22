@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-07
+  Date: 2022-11-22
 
   For more information look at the README.md.
 
@@ -10,6 +10,8 @@
 #include <precise_sntp.h>
 
 #include <precise_sntp_htonl_htons.h>
+#include <precise_sntp_ntp_local_clock_union2uint64.h>
+#include <precise_sntp_ntp_timestamp_format2doubleepoch.h>
 
 #define NTP_PACKET_SIZE 48
 
@@ -50,19 +52,22 @@ static inline void ntp_timestamp_format_hton(ntp_timestamp_format_struct *t) {
   t->fraction = htonl(t->fraction);
 }
 
-#define _ntp_local_clock_union2uint64(x) \
-  ((((uint64_t) x.as_timestamp.seconds) << 32) + x.as_timestamp.fraction)
-
 precise_sntp::precise_sntp(UDP &udp) {
   _udp = &udp;
-  IPAddress ntpip(192, 168, 178, 1);
-  _ntp_server_ip = ntpip;
+  _ntp_server_name = "pool.ntp.org";
   memset(_ntp_local_clock.as_bytes, 0, 8);
 }
 
 precise_sntp::precise_sntp(UDP &udp, IPAddress ntp_server_ip) {
   _udp = &udp;
   _ntp_server_ip = ntp_server_ip;
+  _ntp_server_name = NULL;
+  memset(_ntp_local_clock.as_bytes, 0, 8);
+}
+
+precise_sntp::precise_sntp(UDP &udp, const char* ntp_server_name) {
+  _udp = &udp;
+  _ntp_server_name = ntp_server_name;
   memset(_ntp_local_clock.as_bytes, 0, 8);
 }
 
@@ -94,11 +99,20 @@ uint8_t precise_sntp::force_update() {
 #endif
     return 2;
   }
-  if (_udp->beginPacket(_ntp_server_ip, 123) != 1) {
+  if (_ntp_server_name) {
+    if (_udp->beginPacket(_ntp_server_name, 123) != 1) {
 #ifdef PRECISE_SNTP_DEBUG
-    Serial.println("cannot start connection");
+      Serial.println("cannot start connection");
 #endif
-    return 3;
+      return 3;
+    }
+  } else {
+    if (_udp->beginPacket(_ntp_server_ip, 123) != 1) {
+#ifdef PRECISE_SNTP_DEBUG
+      Serial.println("cannot start connection");
+#endif
+      return 3;
+    }
   }
   if (_udp->write(ntp_packet.as_bytes, NTP_PACKET_SIZE) != NTP_PACKET_SIZE) {
 #ifdef PRECISE_SNTP_DEBUG
@@ -202,8 +216,10 @@ uint8_t precise_sntp::force_update() {
 #ifdef PRECISE_SNTP_DEBUG
     Serial.println("large error, we will use the transmit timestamp of the server");
 #endif
-    _ntp_local_clock.as_timestamp.seconds = ntp_packet.as_ntp_packet.xmt.seconds;
-    _ntp_local_clock.as_timestamp.fraction = ntp_packet.as_ntp_packet.xmt.fraction;
+    _ntp_local_clock.as_timestamp.seconds =
+      ntp_packet.as_ntp_packet.xmt.seconds;
+    _ntp_local_clock.as_timestamp.fraction =
+      ntp_packet.as_ntp_packet.xmt.fraction;
     _last_clock_update = millis();
   } else {
     const uint64_t my_local_clock =
@@ -222,7 +238,10 @@ uint8_t precise_sntp::force_update() {
   Serial.print(" xmt ");
   Serial.println(ntp_packet.as_ntp_packet.xmt.seconds);
   uint32_t epoch = _ntp_local_clock.as_timestamp.seconds - 2208988800UL;
-  uint16_t epoch_milli = (uint16_t) (((float) 1000) * (((float) (_ntp_local_clock.as_timestamp.fraction >> 22)) / ((float) (1<<10))));
+  uint16_t epoch_milli =
+    (uint16_t) (((float) 1000) *
+		(((float) (_ntp_local_clock.as_timestamp.fraction >> 22)) /
+		 ((float) (1<<10))));
   Serial.print(epoch);
   Serial.print(".");
   if (epoch_milli < 100) {
@@ -232,7 +251,10 @@ uint8_t precise_sntp::force_update() {
     }
   }
   Serial.print(epoch_milli);
-  double fepoch = (double) epoch + ((double) _ntp_local_clock.as_timestamp.fraction) / ((double) 4294967295UL); // ~= seconds + fraction / (2**32)
+  double fepoch =
+    (double) epoch +
+    (((double) _ntp_local_clock.as_timestamp.fraction) /
+     ((double) 4294967295UL)); // ~= seconds + fraction / (2**32)
   Serial.print(" ");
   Serial.println(fepoch);
 #endif
@@ -240,7 +262,17 @@ uint8_t precise_sntp::force_update() {
 }
 
 struct ntp_timestamp_format_struct precise_sntp::_get_local_clock() {
-  const uint64_t my_local_clock = (int64_t) _ntp_local_clock_union2uint64(_ntp_local_clock) + ((((((uint64_t) (millis() - _last_clock_update)) << 16)) / 1000) << 16);
+  const uint32_t mtime = millis();
+  uint64_t my_local_clock;
+  if (mtime > _last_clock_update) {
+    my_local_clock =
+      (int64_t) _ntp_local_clock_union2uint64(_ntp_local_clock) +
+      ((((((uint64_t) (millis() - _last_clock_update)) << 16)) / 1000) << 16);
+  } else {
+    my_local_clock =
+      (int64_t) _ntp_local_clock_union2uint64(_ntp_local_clock) -
+      ((((((uint64_t) (_last_clock_update - millis())) << 16)) / 1000) << 16);
+  }
   struct ntp_timestamp_format_struct now;
   now.seconds = (uint32_t) (my_local_clock >> 32);
   now.fraction = (uint32_t) (my_local_clock & 0x00000000FFFFFFFFULL);
@@ -249,18 +281,29 @@ struct ntp_timestamp_format_struct precise_sntp::_get_local_clock() {
 
 time_t precise_sntp::get_epoch() {
   const struct ntp_timestamp_format_struct now = _get_local_clock();
-  return now.seconds - 2208988800UL;
+  return ntp_timestamp_seconds2epoch(now);
 }
 
 double precise_sntp::dget_epoch() {
   const struct ntp_timestamp_format_struct now = _get_local_clock();
-  return (double) (now.seconds - 2208988800UL) + ((uint16_t) (((now.fraction >> 16) * 1000) >> 16)) / 1000.0;
+  return ntp_timestamp_format2doubleepoch(now);
 }
 
 timestamp_format precise_sntp::tget_epoch() {
   const struct ntp_timestamp_format_struct ntp_now = _get_local_clock();
   struct timestamp_format now;
-  now.seconds = ntp_now.seconds - 2208988800UL;
+  now.seconds = ntp_timestamp_seconds2epoch(ntp_now);
   now.fraction = ntp_now.fraction;
   return now;
+}
+unsigned long precise_sntp::get_last_update() {
+  return _last_update;
+}
+
+bool precise_sntp::is_synchronized() {
+  if ((_last_update > 0) &&
+      (_last_update + 1000 * (1 << _poll_exponent) > millis())) {
+    return true;
+  }
+  return false;
 }

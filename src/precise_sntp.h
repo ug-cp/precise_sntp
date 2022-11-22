@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-06
+  Date: 2022-11-22
 
   For more information look at the README.md.
 */
@@ -33,6 +33,7 @@ class precise_sntp {
 
   /*
     minimal initialization of the class
+    The named ntp server pool.ntp.org is used.
   */
   precise_sntp(UDP &udp);
 
@@ -40,6 +41,11 @@ class precise_sntp {
     initialization of the class with a specific time server
   */
   precise_sntp(UDP &udp, IPAddress ntp_server_ip);
+
+  /*
+    initialization of the class with a specific time server name
+  */
+  precise_sntp(UDP &udp, const char* ntp_server_name);
 
   /*
     Get time from server.
@@ -59,28 +65,60 @@ class precise_sntp {
   uint8_t update();
 
   /*
+    Returns the actual time as epoch (unix timestamp) in seconds.
+   */
+  time_t get_epoch(); // seconds
+
+  /*
+    Returns the actual time as epoch (unix timestamp) in seconds
+    with a precision of about milliseconds.
+  */
+  double dget_epoch(); // seconds with milliseconds as fraction
+
+  /*
+    Returns the actual time as epoch (unix timestamp) in seconds
+    and fractions of the second. This is the full calculated precision.
+    But since the local clock is not adjusted this precision reflects
+    not the reality. You could expect a precision of a few milliseconds.
+  */
+  timestamp_format tget_epoch(); // seconds + fraction of the second
+
+  /*
+    returns true if clock was once updated and
+    the next update time is not reached
+  */
+  bool is_synchronized();
+
+  /*
     Force get time from server, should only be used in local networks with
     local time server for debugging purpose.
 
     returns an error code:
 
     0: success
-    1: poll policy does not allow fast updates, skip communication with server
     2: cannot use local port _localport
     3: cannot start connection
     4: problems writing data
     5: packet was not send
     6: got no answer from server
     7: sanity check fail, answer from server is bogus
+    8: sanity check fail, server is not syncronized
   */
   uint8_t force_update();
 
+  /*
+    Returns the ntp local clock in ntp timestamp format.
+  */
   struct ntp_timestamp_format_struct _get_local_clock();
-  time_t get_epoch(); // seconds
-  double dget_epoch(); // seconds with milliseconds as fraction
-  timestamp_format tget_epoch(); // seconds + fraction of the second
+
+  /*
+    return the millis when the last update from the time server was successful
+  */
+  unsigned long get_last_update();
+
  private:
   IPAddress _ntp_server_ip;
+  const char* _ntp_server_name;
   UDP* _udp;
   uint16_t _localport = 1234;
   union ntp_local_clock_union _ntp_local_clock;

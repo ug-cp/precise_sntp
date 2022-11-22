@@ -4,7 +4,7 @@
   This is a basic example. It gets the time and print it to serial.
 
   Author: Daniel Mohr
-  Date: 2022-11-06
+  Date: 2022-11-22
 */
 
 #include <Ethernet.h>
@@ -18,7 +18,9 @@ uint8_t mac[] = {0x02, 0x74, 0x72, 0x69, 0x67, 0x00};
 
 EthernetUDP udp;
 
-precise_sntp sntp(udp, IPAddress(192, 168, 178, 1));
+precise_sntp sntp(udp);
+// precise_sntp sntp(udp, IPAddress(192, 168, 178, 1));
+// precise_sntp sntp(udp, "pool.ntp.org");
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
