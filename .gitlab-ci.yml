@@ -38,18 +38,21 @@ arduino-lint:
 arduino_ci:
   stage: test_build
   image:
-    # https://hub.docker.com/_/ubuntu
-    name: ubuntu:18.04
+    # https://hub.docker.com/_/debian
+    name: debian:latest
   script:
     - date
     - apt-get update
-    - $APT_GET_INSTALL ruby build-essential
-    - gem install bundler arduino_ci
+    - $APT_GET_INSTALL ruby build-essential git
+    - echo "source 'https://rubygems.org'" > Gemfile
+    - echo "gem 'arduino_ci', git: 'https://github.com/Arduino-CI/arduino_ci.git'" >> Gemfile
+    - gem install bundler
+    - bundle install
     - export EXPECT_UNITTESTS=1
     - export EXPECT_EXAMPLES=1
     - echo "mock Udp.h for unittests"
     - cp -p extras/udp_mock.h /var/lib/gems/*/gems/arduino_ci-*/cpp/arduino/Udp.h
-    - arduino_ci.rb
+    - bundle exec arduino_ci.rb
 
 prepare_release:
   stage: test_build
