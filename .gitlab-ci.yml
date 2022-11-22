@@ -45,7 +45,8 @@ arduino_ci:
     - apt-get update
     - $APT_GET_INSTALL ruby build-essential git
     - echo "source 'https://rubygems.org'" > Gemfile
-    - echo "gem 'arduino_ci', git: 'https://github.com/Arduino-CI/arduino_ci.git'" >> Gemfile
+    - echo -n "gem 'arduino_ci', git:" >> Gemfile
+    - echo " 'https://github.com/Arduino-CI/arduino_ci.git'" >> Gemfile
     - gem install bundler
     - bundle install
     - export EXPECT_UNITTESTS=1
