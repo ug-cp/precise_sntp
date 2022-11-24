@@ -64,10 +64,10 @@ arduino-cli:
     - date
     - apt-get update
     - $APT_GET_INSTALL curl ca-certificates
-    - p=$(pwd) ; (cd ~/Arduino/libraries/ && ln -s $p)
     - (cd && curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh)
     - ~/bin/arduino-cli help
     - ~/bin/arduino-cli version
+    - p=$(pwd) ; (cd ~/Arduino/libraries/ && ln -s $p)
     - ~/bin/arduino-cli core install arduino:samd
     - ~/bin/arduino-cli lib install Ethernet WiFiNINA
     - cd examples/get_time_and_print_ethernet
