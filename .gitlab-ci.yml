@@ -67,9 +67,10 @@ arduino-cli:
     - (cd && curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh)
     - ~/bin/arduino-cli help
     - ~/bin/arduino-cli version
-    - p=$(pwd) ; (cd ~/Arduino/libraries/ && ln -s $p)
     - ~/bin/arduino-cli core install arduino:samd
     - ~/bin/arduino-cli lib install Ethernet WiFiNINA
+    - p=$(pwd)
+    - (cd ~/Arduino/libraries/ && ln -s $p)
     - cd examples/get_time_and_print_ethernet
     - ~/bin/arduino-cli compile -v -b arduino:samd:mkr1000 ./
     - cd ../get_time_and_print_wifinina
