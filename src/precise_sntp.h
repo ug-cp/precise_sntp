@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-22
+  Date: 2022-11-24
 
   For more information look at the README.md.
 */
@@ -33,17 +33,52 @@ class precise_sntp {
 
   /*
     minimal initialization of the class
+
     The named ntp server pool.ntp.org is used.
+
+    Example:
+
+    #include <EthernetUdp.h>
+    #include <precise_sntp.h>
+    EthernetUDP udp;
+    precise_sntp sntp(udp);
+    void setup() {}
+    void loop() {
+    sntp.update();
+    }
   */
   precise_sntp(UDP &udp);
 
   /*
     initialization of the class with a specific time server
+
+    Example:
+
+    #include <EthernetUdp.h>
+    #include <IPAddress.h>
+    #include <precise_sntp.h>
+    EthernetUDP udp;
+    precise_sntp sntp(udp, IPAddress(192, 168, 178, 1));
+    void setup() {}
+    void loop() {
+    sntp.update();
+    }
   */
   precise_sntp(UDP &udp, IPAddress ntp_server_ip);
 
   /*
     initialization of the class with a specific time server name
+
+    Example:
+
+    #include <EthernetUdp.h>
+    #include <precise_sntp.h>
+    EthernetUDP udp;
+    precise_sntp sntp(udp, "pool.ntp.org");
+    void setup() {}
+    void loop() {
+    sntp.update();
+    }
   */
   precise_sntp(UDP &udp, const char* ntp_server_name);
 
