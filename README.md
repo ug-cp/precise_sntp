@@ -1,6 +1,6 @@
 ---
 author: Daniel Mohr
-date: 2022-11-08
+date: 2022-11-24
 license: BSD 3-Clause License
 ---
 
@@ -36,7 +36,34 @@ this repository.
 
 Or just copy the content of this repository to your Arduino libraries, e. g.:
 
+```shell
+git clone https://.../precise_sntp.git ~/Arduino/libraries/precise_sntp
+```
+
 ## Usage
+
+This library does not create/handle network. For example, you can do this
+on your own by using the libraries `Ethernet.h` and `EthernetUdp.h`.
+
+After including this library you have to create an instance `sntp` of
+the class and to provide a EthernetUDP instance to handle udp sending
+and receiving.
+
+```c
+#include <EthernetUdp.h>
+#include <precise_sntp.h>
+EthernetUDP udp;
+precise_sntp sntp(udp);
+```
+
+Further you should call `sntp.update()` regularly to get or update the
+time from a time server.
+
+```c
+void loop() {
+  sntp.update();
+}
+```
 
 ## Tested
 
