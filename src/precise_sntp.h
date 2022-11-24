@@ -85,6 +85,10 @@ class precise_sntp {
   /*
     Get time from server.
 
+    After the first contact the poll policy of the server is used.
+    The smallest allowed poll exponent is used. This means as often
+    as allowed we get the time from the server.
+
     returns an error code:
 
     0: success
