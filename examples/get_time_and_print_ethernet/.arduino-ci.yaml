@@ -1,0 +1,5 @@
+compile:
+  libraries:
+    - Ethernet
+  board:
+    - arduino:samd:mkr1000

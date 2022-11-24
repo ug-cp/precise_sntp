@@ -1,0 +1,5 @@
+compile:
+  libraries:
+    - WiFiNINA
+  board:
+    - arduino:samd:mkrwifi1010
