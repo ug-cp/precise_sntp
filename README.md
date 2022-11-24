@@ -67,8 +67,8 @@ void loop() {
 
 ## Tested
 
-It was tested on SAMD21 (Arduino MKR1000, Arduino MKR Zero and
-Arduino MKR WiFi 1010).
+It was tested on SAMD21 (Arduino MKR1000 using Ethernet and
+Arduino MKR WiFi 1010 using WI-FI) -- see examples.
 
 ## Examples
 

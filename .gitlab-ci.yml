@@ -53,7 +53,30 @@ arduino_ci:
     - export EXPECT_EXAMPLES=1
     - echo "mock Udp.h for unittests"
     - cp -p extras/udp_mock.h /var/lib/gems/*/bundler/gems/arduino_ci-*/cpp/arduino/Udp.h
-    - bundle exec arduino_ci.rb
+    - bundle exec arduino_ci.rb --skip-examples-compilation
+
+arduino-cli:
+  stage: test_build
+  image:
+    # https://hub.docker.com/_/debian
+    name: debian:latest
+  script:
+    - date
+    - apt-get update
+    - $APT_GET_INSTALL curl ca-certificates
+    - (cd && curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh)
+    - ~/bin/arduino-cli help
+    - ~/bin/arduino-cli version
+    - ~/bin/arduino-cli core install arduino:samd
+    - ~/bin/arduino-cli lib install Ethernet WiFiNINA
+    - p=$(pwd)
+    - (cd ~/Arduino/libraries/ && ln -s $p)
+    - cd examples/get_time_and_print_ethernet
+    - ~/bin/arduino-cli compile -v -b arduino:samd:mkr1000 ./
+    - cd ../get_time_and_print_wifinina
+    - echo "#define SECRET_SSID \"foo\"" > arduino_secrets.h
+    - echo "#define SECRET_PASS \"bar\"" >> arduino_secrets.h
+    - ~/bin/arduino-cli compile -v -b arduino:samd:mkrwifi1010 ./
 
 prepare_release:
   stage: test_build
