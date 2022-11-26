@@ -46,7 +46,7 @@ void loop() {
   Serial.print("epoch: ");
   Serial.print(sntp.get_epoch());
   Serial.print(" ");
-  Serial.print(sntp.dget_epoch());
+  Serial.print(sntp.dget_epoch(), 3);
   Serial.print(" ");
   Serial.print(sntp.tget_epoch().seconds);
   Serial.print("."); // this is not a decimal point!
