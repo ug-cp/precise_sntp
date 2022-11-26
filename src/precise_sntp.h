@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-24
+  Date: 2022-11-26
 
   For more information look at the README.md.
 */
@@ -83,6 +83,21 @@ class precise_sntp {
   precise_sntp(UDP &udp, const char* ntp_server_name);
 
   /*
+    Set the used poll exponent range.
+
+    In NTPv4 the poll exponent ranges from 4 (16 s) to 17 (36 h).
+
+    The poll exponent tau defines the allowed poll interval of 2^tau seconds.
+
+    The method `update` does not do faster polls.
+
+    The method `update_adapt_poll_period` does not do faster polls and also
+    adapt the poll period by incrementing or decrementing the used poll
+    exponent in the defined range.
+   */
+  void set_poll_exponent_range(uint8_t min_poll, uint8_t max_poll);
+
+  /*
     Get time from server.
 
     After the first contact the poll policy of the server is used.
@@ -102,6 +117,28 @@ class precise_sntp {
     8: sanity check fail, server is not syncronized
   */
   uint8_t update();
+
+  /*
+    Get time from server and adapt the poll period.
+
+    After the first contact the poll policy of the server is used.
+    The smallest allowed poll exponent is used. On successful polls
+    the poll exponent iss incremented. On unsuccessful polls the poll
+    exponent is decremented.
+
+    returns an error code:
+
+    0: success
+    1: poll policy does not allow fast updates, skip communication with server
+    2: cannot use local port _localport
+    3: cannot start connection
+    4: problems writing data
+    5: packet was not send
+    6: got no answer from server
+    7: sanity check fail, answer from server is bogus
+    8: sanity check fail, server is not syncronized
+   */
+  uint8_t update_adapt_poll_period();
 
   /*
     Returns the actual time as epoch (unix timestamp) in seconds.
@@ -164,4 +201,7 @@ class precise_sntp {
   unsigned long _last_clock_update = 0;
   unsigned long _last_update = 0;
   uint8_t _poll_exponent = 1;
+  bool _is_synced = false;
+  uint8_t _min_poll_exponent = 6; // 4 is NTPv4 minimal poll exponent (16 s)
+  uint8_t _max_poll_exponent = 10; // 17 is NTPv4 maximal poll exponent (36 h)
 };
