@@ -105,7 +105,7 @@ release_job:
   needs:
     - job: arduino-lint
     - job: arduino_ci
-    - job: arduino_cli
+    - job: arduino-cli
     - job: prepare_release
       artifacts: true
   rules:
