@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-26
+  Date: 2022-11-29
 
   For more information look at the README.md.
 
@@ -14,6 +14,8 @@
 #include <precise_sntp_ntp_timestamp_format2doubleepoch.h>
 
 #define NTP_PACKET_SIZE 48
+#define NTP_MIN_POLL_EXPONENT 4
+#define NTP_MAX_POLL_EXPONENT 17
 
 struct ntp_short_format_struct { // 4 bytes
   uint16_t seconds;
@@ -72,15 +74,15 @@ precise_sntp::precise_sntp(UDP &udp, const char* ntp_server_name) {
 }
 
 void precise_sntp::set_poll_exponent_range(uint8_t min_poll, uint8_t max_poll) {
-  if (4 <= min_poll) {
+  if (NTP_MIN_POLL_EXPONENT <= min_poll) {
     _min_poll_exponent = min_poll;
   } else {
-    _min_poll_exponent = 4;
+    _min_poll_exponent = NTP_MIN_POLL_EXPONENT;
   }
-  if (max_poll <= 17) {
+  if (max_poll <= NTP_MAX_POLL_EXPONENT) {
     _max_poll_exponent = max_poll;
   } else {
-    _max_poll_exponent = 17;
+    _max_poll_exponent = NTP_MAX_POLL_EXPONENT;
   }
 }
 
