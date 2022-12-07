@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-22
+  Date: 2022-11-29
 
   For more information look at the README.md.
 
@@ -14,6 +14,8 @@
 #include <precise_sntp_ntp_timestamp_format2doubleepoch.h>
 
 #define NTP_PACKET_SIZE 48
+#define NTP_MIN_POLL_EXPONENT 4
+#define NTP_MAX_POLL_EXPONENT 17
 
 struct ntp_short_format_struct { // 4 bytes
   uint16_t seconds;
@@ -71,24 +73,63 @@ precise_sntp::precise_sntp(UDP &udp, const char* ntp_server_name) {
   memset(_ntp_local_clock.as_bytes, 0, 8);
 }
 
+void precise_sntp::set_poll_exponent_range(uint8_t min_poll, uint8_t max_poll) {
+  if (NTP_MIN_POLL_EXPONENT <= min_poll) {
+    _min_poll_exponent = min_poll;
+  } else {
+    _min_poll_exponent = NTP_MIN_POLL_EXPONENT;
+  }
+  if (max_poll <= NTP_MAX_POLL_EXPONENT) {
+    _max_poll_exponent = max_poll;
+  } else {
+    _max_poll_exponent = NTP_MAX_POLL_EXPONENT;
+  }
+}
+
 uint8_t precise_sntp::update() {
-  if ((_last_update > 0) &&
-      (_last_update + 1000 * (1 << _poll_exponent) > millis())) {
+  if (_is_synced && (_next_update > millis())) {
     return 1;
   }
   return force_update();
 }
 
+uint8_t precise_sntp::update_adapt_poll_period() {
+  const bool was_synchronized = (_is_synced) &&
+    (_last_update + 2 * 1000 * (1 << _poll_exponent) > millis());
+  const uint8_t old_poll_exponent = _poll_exponent;
+  const uint8_t ret = update();
+  if (ret == 1) {
+    return ret;
+  }
+  if (was_synchronized && (ret == 0)) {
+    if (old_poll_exponent < _max_poll_exponent) {
+      _poll_exponent = old_poll_exponent + 1; // adapt poll period
+      _next_update = _last_update + 1000 * (1 << _poll_exponent);
+    }
+  } else if (ret > 1) {
+    if (_min_poll_exponent < old_poll_exponent) {
+      _poll_exponent = old_poll_exponent - 1; // adapt poll period
+      if (was_synchronized) {
+	_next_update = _last_update + 1000 * (1 << _poll_exponent);
+      }
+    }
+  }
+  return ret;
+}
+
 uint8_t precise_sntp::force_update() {
+  _is_synced = false;
 #ifdef PRECISE_SNTP_DEBUG
   Serial.println("update");
+  Serial.print("_poll_exponent ");
+  Serial.println(_poll_exponent);
 #endif
   union ntp_packet_union ntp_packet;
   memset(ntp_packet.as_bytes, 0, NTP_PACKET_SIZE);
   // set leap=3 (no warning), version=4, mode=3 (client):
   ntp_packet.as_ntp_packet.leap_version_mode = 0xE3;
   ntp_packet.as_ntp_packet.stratum = 0; // stratum=0 (unspecified or invalid)
-  ntp_packet.as_ntp_packet.poll = 6; // poll=6 (default min poll interval)
+  ntp_packet.as_ntp_packet.poll = _poll_exponent; // poll=6 (default min poll interval)
   ntp_packet.as_ntp_packet.precision = 0xEC;
   const struct ntp_timestamp_format_struct t1 = _get_local_clock();
   ntp_packet.as_ntp_packet.xmt = t1;
@@ -104,6 +145,7 @@ uint8_t precise_sntp::force_update() {
 #ifdef PRECISE_SNTP_DEBUG
       Serial.println("cannot start connection");
 #endif
+      _next_update += 1000;
       return 3;
     }
   } else {
@@ -111,6 +153,7 @@ uint8_t precise_sntp::force_update() {
 #ifdef PRECISE_SNTP_DEBUG
       Serial.println("cannot start connection");
 #endif
+      _next_update += 1000;
       return 3;
     }
   }
@@ -118,12 +161,14 @@ uint8_t precise_sntp::force_update() {
 #ifdef PRECISE_SNTP_DEBUG
     Serial.println("problems writing data");
 #endif
+    _next_update += 1000;
     return 4;
   }
   if (_udp->endPacket() != 1) {
 #ifdef PRECISE_SNTP_DEBUG
     Serial.println("packet was not send");
 #endif
+    _next_update += 1000;
     return 5;
   }
   unsigned long start_waiting = millis();
@@ -135,6 +180,7 @@ uint8_t precise_sntp::force_update() {
 #ifdef PRECISE_SNTP_DEBUG
     Serial.println("got no answer from server");
 #endif
+    _next_update += 1000;
     return 6;
   }
   const struct ntp_timestamp_format_struct t4 = _get_local_clock();
@@ -152,6 +198,7 @@ uint8_t precise_sntp::force_update() {
 #ifdef PRECISE_SNTP_DEBUG
     Serial.println("sanity check fail, answer from server is bogus");
 #endif
+    _next_update += 1000;
     return 7;
   }
   if ((ntp_packet.as_ntp_packet.stratum < 1) ||
@@ -159,16 +206,22 @@ uint8_t precise_sntp::force_update() {
 #ifdef PRECISE_SNTP_DEBUG
     Serial.println("sanity check fail, server is not syncronized");
 #endif
+    // handle stratum == 0 as KoD
+    _next_update += 1000 * (1 << _min_poll_exponent);
     return 8;
   }
   // go on
   _last_update = millis();
   const struct ntp_timestamp_format_struct t2 = ntp_packet.as_ntp_packet.rec;
   const struct ntp_timestamp_format_struct t3 = ntp_packet.as_ntp_packet.xmt;
-  if ((1 < ntp_packet.as_ntp_packet.poll) &
-      (ntp_packet.as_ntp_packet.poll < 17)) {
+  if (ntp_packet.as_ntp_packet.poll < _min_poll_exponent) {
+    _poll_exponent = _min_poll_exponent;
+  } else if (_max_poll_exponent < ntp_packet.as_ntp_packet.poll) {
+    _poll_exponent = _max_poll_exponent;
+  } else {
     _poll_exponent = ntp_packet.as_ntp_packet.poll;
   }
+  _next_update = _last_update + 1000 * (1 << _poll_exponent);
 #ifdef PRECISE_SNTP_DEBUG
   Serial.print("t1: ");
   Serial.print(t1.seconds);
@@ -188,7 +241,7 @@ uint8_t precise_sntp::force_update() {
   Serial.println(t4.fraction);
 #endif
   // using the own clock, we can calculate here some statistics, e. g.:
-  // offset of B relative to A:
+  // offset theta of B relative to A:
   const uint64_t T1 = (((uint64_t) t1.seconds) << 32) + t1.fraction;
   const uint64_t T2 = (((uint64_t) t2.seconds) << 32) + t2.fraction;
   const uint64_t T3 = (((uint64_t) t3.seconds) << 32) + t3.fraction;
@@ -258,6 +311,7 @@ uint8_t precise_sntp::force_update() {
   Serial.print(" ");
   Serial.println(fepoch);
 #endif
+  _is_synced = true;
   return 0;
 }
 
@@ -301,9 +355,6 @@ unsigned long precise_sntp::get_last_update() {
 }
 
 bool precise_sntp::is_synchronized() {
-  if ((_last_update > 0) &&
-      (_last_update + 1000 * (1 << _poll_exponent) > millis())) {
-    return true;
-  }
-  return false;
+  return (_is_synced &&
+	  (_last_update + 1000 * (1 << _poll_exponent) > millis()));
 }

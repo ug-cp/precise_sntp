@@ -63,20 +63,20 @@ arduino-cli:
   script:
     - date
     - apt-get update
-    - $APT_GET_INSTALL curl ca-certificates
+    - $APT_GET_INSTALL curl ca-certificates parallel
     - (cd && curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh)
     - ~/bin/arduino-cli help
     - ~/bin/arduino-cli version
     - ~/bin/arduino-cli core install arduino:samd
     - ~/bin/arduino-cli lib install Ethernet WiFiNINA
+    # install precise_sntp by linking
     - p=$(pwd)
     - (cd ~/Arduino/libraries/ && ln -s $p)
-    - cd examples/get_time_and_print_ethernet
-    - ~/bin/arduino-cli compile -v -b arduino:samd:mkr1000 ./
-    - cd ../get_time_and_print_wifinina
-    - echo "#define SECRET_SSID \"foo\"" > arduino_secrets.h
-    - echo "#define SECRET_PASS \"bar\"" >> arduino_secrets.h
-    - ~/bin/arduino-cli compile -v -b arduino:samd:mkrwifi1010 ./
+    # prepare examples
+    - echo "#define SECRET_SSID \"foo\"" > examples/get_time_and_print_wifinina/arduino_secrets.h
+    - echo "#define SECRET_PASS \"bar\"" >> examples/get_time_and_print_wifinina/arduino_secrets.h
+    # compile examples
+    - "(cd examples && parallel -k -v ~/bin/arduino-cli compile -v -b ::: arduino:samd:mkr1000 arduino:samd:mkrwifi1010 arduino:samd:mkr1000 :::+ get_time_and_print_ethernet get_time_and_print_wifinina get_time_and_print_adapt_interval)"
 
 prepare_release:
   stage: test_build
@@ -105,6 +105,7 @@ release_job:
   needs:
     - job: arduino-lint
     - job: arduino_ci
+    - job: arduino-cli
     - job: prepare_release
       artifacts: true
   rules:

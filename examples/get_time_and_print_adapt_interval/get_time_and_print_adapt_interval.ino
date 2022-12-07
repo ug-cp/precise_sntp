@@ -1,10 +1,10 @@
 /*
   precise_sntp example
 
-  This is a basic example. It gets the time and print it to serial.
+  This example gets the time, adapt the poll period and print it to serial.
 
   Author: Daniel Mohr
-  Date: 2022-11-22
+  Date: 2022-11-26
 */
 
 #include <Ethernet.h>
@@ -18,9 +18,7 @@ uint8_t mac[] = {0x02, 0x74, 0x72, 0x69, 0x67, 0x00};
 
 EthernetUDP udp;
 
-precise_sntp sntp(udp);
-// precise_sntp sntp(udp, IPAddress(192, 168, 178, 1));
-// precise_sntp sntp(udp, "pool.ntp.org");
+precise_sntp sntp(udp, IPAddress(192, 168, 178, 1));
 
 void setup() {
   Serial.begin(SERIAL_BAUD_RATE);
@@ -40,10 +38,11 @@ void setup() {
       Serial.println("Ethernet cable not connected");
     }
   }
+  sntp.set_poll_exponent_range(4, 6);
 }
 
 void loop() {
-  sntp.update();
+  sntp.update_adapt_poll_period();
   Serial.print("epoch: ");
   Serial.print(sntp.get_epoch());
   Serial.print(" ");
