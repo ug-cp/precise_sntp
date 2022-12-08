@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-11-26
+  Date: 2022-12-08
 
   For more information look at the README.md.
 */
@@ -200,7 +200,7 @@ class precise_sntp {
   union ntp_local_clock_union _ntp_local_clock;
   unsigned long _last_clock_update = 0;
   unsigned long _last_update = 0;
-  unsigned long _next_update = 0;
+  unsigned long _next_update_period = 0;
   uint8_t _poll_exponent = 1;
   bool _is_synced = false;
   uint8_t _min_poll_exponent = 6; // 4 is NTPv4 minimal poll exponent (16 s)
