@@ -1,6 +1,6 @@
 ---
 author: Daniel Mohr
-date: 2022-11-24
+date: 2022-12-08
 license: BSD 3-Clause License
 ---
 
@@ -22,8 +22,9 @@ few milliseconds.
 
 The returned epoch in different formats is always calculated using `millis()`.
 `millis()` will overflow after about 50 days and the returned epoch is not
-correct anymore. To overcome this you have to call `update` and correct the
-time using an (S)NTP server.
+correct anymore. To handle this you have to call `update`,
+`update_adapt_poll_period` or `check_millis_overflow` at least every 24 days.
+This should work for about 8926 years, then the check counter will overflow.
 
 Since no clock adjust is done, the time is not always continuous. Every time
 the time is updated from a time server the time could jump.
