@@ -86,7 +86,17 @@ void precise_sntp::set_poll_exponent_range(uint8_t min_poll, uint8_t max_poll) {
   }
 }
 
+void precise_sntp::check_millis_overflow() {
+  static uint32_t last_check = 0;
+  const uint32_t mtime = millis();
+  if (mtime < last_check) {
+    _millis_overflow_count++;
+  }
+  last_check = mtime;
+}
+
 uint8_t precise_sntp::update() {
+  check_millis_overflow();
   if (_is_synced && (_next_update_period > millis() - _last_update)) {
     return 1;
   }
@@ -274,6 +284,7 @@ uint8_t precise_sntp::force_update() {
     _ntp_local_clock.as_timestamp.fraction =
       ntp_packet.as_ntp_packet.xmt.fraction;
     _last_clock_update = millis();
+    _millis_overflow_count = 0;
   } else {
     const uint64_t my_local_clock =
       (int64_t) _ntp_local_clock_union2uint64(_ntp_local_clock) + theta;
@@ -316,17 +327,11 @@ uint8_t precise_sntp::force_update() {
 }
 
 struct ntp_timestamp_format_struct precise_sntp::_get_local_clock() {
-  const uint32_t mtime = millis();
+  const uint64_t mtime = (((uint64_t) _millis_overflow_count) << 32) + millis();
   uint64_t my_local_clock;
-  if (mtime > _last_clock_update) {
-    my_local_clock =
-      (int64_t) _ntp_local_clock_union2uint64(_ntp_local_clock) +
-      ((((((uint64_t) (millis() - _last_clock_update)) << 16)) / 1000) << 16);
-  } else {
-    my_local_clock =
-      (int64_t) _ntp_local_clock_union2uint64(_ntp_local_clock) -
-      ((((((uint64_t) (_last_clock_update - millis())) << 16)) / 1000) << 16);
-  }
+  my_local_clock =
+    (int64_t) _ntp_local_clock_union2uint64(_ntp_local_clock) +
+    ((((mtime - _last_clock_update) << 16) / 1000) << 16);
   struct ntp_timestamp_format_struct now;
   now.seconds = (uint32_t) (my_local_clock >> 32);
   now.fraction = (uint32_t) (my_local_clock & 0x00000000FFFFFFFFULL);

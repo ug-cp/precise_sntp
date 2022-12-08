@@ -98,6 +98,24 @@ class precise_sntp {
   void set_poll_exponent_range(uint8_t min_poll, uint8_t max_poll);
 
   /*
+    This checks if millis overflow.
+
+    This method is called from update() and update_adapt_poll_period().
+    Therefore it is not necessary to call this function in addition.
+
+    The returned epoch in other methods is always calculated using millis().
+    millis() will overflow after about 50 days and the returned epoch is not
+    correct anymore. To handle this check_millis_overflow() tries to count
+    the overflows of millis().
+
+    If you do not call update() or update_adapt_poll_period() at least every
+    24 days, you should call check_millis_overflow() at least every 24 days.
+
+    This should work for about 8926 years, then the check counter will overflow.
+  */
+  void check_millis_overflow();
+
+  /*
     Get time from server.
 
     After the first contact the poll policy of the server is used.
@@ -205,4 +223,5 @@ class precise_sntp {
   bool _is_synced = false;
   uint8_t _min_poll_exponent = 6; // 4 is NTPv4 minimal poll exponent (16 s)
   uint8_t _max_poll_exponent = 10; // 17 is NTPv4 maximal poll exponent (36 h)
+  uint16_t _millis_overflow_count = 0;
 };
