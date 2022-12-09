@@ -91,7 +91,7 @@ class precise_sntp {
 
     The method update() does not do faster polls.
 
-    The method update_adapt_poll_period() does not do faster polls. 
+    The method update_adapt_poll_period() does not do faster polls.
     It also adapts the poll period by incrementing or decrementing the used
     poll exponent in the defined range.
    */
