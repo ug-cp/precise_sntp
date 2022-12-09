@@ -1,6 +1,6 @@
 ---
 author: Daniel Mohr
-date: 2022-12-08
+date: 2022-12-09
 license: BSD 3-Clause License
 ---
 
@@ -13,11 +13,11 @@ for the arduino platform.
 
 In contrast to other implementations this library allows sub-second precision.
 
-As all (S)NTP implementation for arduino it is simplified.
+As all (S)NTP implementations for arduino it is simplified.
 
 Since in SNTP no mitigation algorithms (clock filter, clock adjust, ...) are
-done, a precision of sub-milliseconds is not meaningful.
-Therefore we concentrate here to get the time with a precision of a
+used, a precision of sub-milliseconds is not meaningful.
+Therefore we concentrate here on getting the time with a precision of a
 few milliseconds.
 
 The returned epoch in different formats is always calculated using `millis()`.
@@ -66,7 +66,7 @@ void loop() {
 }
 ```
 
-Maybe cou can use `force_update_iburst()` in the setup routine to speed the
+Maybe cou can use `force_update_iburst()` in the setup routine to speed up the
 initial synchronization.
 
 ```c
