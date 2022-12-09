@@ -207,10 +207,12 @@ uint8_t precise_sntp::force_update(bool use_transmit_timestamp) {
   }
   const struct ntp_timestamp_format_struct t4 = _get_local_clock();
   _udp->read(ntp_packet.as_bytes, NTP_PACKET_SIZE);
-  // adapt byte order
-  ntp_short_format_ntoh(&ntp_packet.as_ntp_packet.rootdelay);
-  ntp_short_format_ntoh(&ntp_packet.as_ntp_packet.rootdisp);
+  // adapt byte order (skipping not used values):
+  // ntp_short_format_ntoh(&ntp_packet.as_ntp_packet.rootdelay);
+  // ntp_short_format_ntoh(&ntp_packet.as_ntp_packet.rootdisp);
+#ifdef PRECISE_SNTP_DEBUG
   ntp_timestamp_format_ntoh(&ntp_packet.as_ntp_packet.reftime);
+#endif
   ntp_timestamp_format_ntoh(&ntp_packet.as_ntp_packet.org);
   ntp_timestamp_format_ntoh(&ntp_packet.as_ntp_packet.rec);
   ntp_timestamp_format_ntoh(&ntp_packet.as_ntp_packet.xmt);
