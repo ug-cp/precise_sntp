@@ -66,6 +66,15 @@ void loop() {
 }
 ```
 
+Maybe cou can use `force_update_iburst()` in the setup routine to speed the
+initial synchronization.
+
+```c
+void setup() {
+  sntp.force_update_iburst();
+}
+```
+
 ## Tested
 
 It was tested on SAMD21 (Arduino MKR1000 using Ethernet and

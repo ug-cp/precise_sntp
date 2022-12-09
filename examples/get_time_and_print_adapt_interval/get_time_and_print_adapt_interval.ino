@@ -1,10 +1,11 @@
 /*
   precise_sntp example
 
-  This example gets the time, adapt the poll period and print it to serial.
+  This example gets the time, adapt the poll period and print the to serial.
+  Further in the setup routine an initial time setting is done.
 
   Author: Daniel Mohr
-  Date: 2022-11-26
+  Date: 2022-12-09
 */
 
 #include <Ethernet.h>
@@ -39,6 +40,7 @@ void setup() {
     }
   }
   sntp.set_poll_exponent_range(4, 6);
+  sntp.force_update_iburst();
 }
 
 void loop() {

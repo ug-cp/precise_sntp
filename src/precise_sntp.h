@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-12-08
+  Date: 2022-12-09
 
   For more information look at the README.md.
 */
@@ -184,8 +184,40 @@ class precise_sntp {
   bool is_synchronized();
 
   /*
+    This is intended to speed the initial synchronization.
+    Use it for example in the setup routine.
+
+    It does n times getting the time from the server with a delay of d
+    milliseconds between. The first times the transmit timestamp of the
+    ntp server is used.
+
+    Since no mitigation algorithms (clock filter, clock adjust, ...) are
+    done, it does not make sense to do a high number of calls. Therefore
+    n is 2 as default and not the typical 8 used by NTP implementations.
+
+    The return value is combined results of all calls. In the least significant
+    4 Bits is the return value of the first call. In the next 4 Bits the
+    return value of the second call. And so on.
+
+    In each 4 Bits the value can be interpreted like the return error codes
+    from force_update.
+
+    Therefore n should not be larger than 15.
+    If it is larger, it will be ignored and 8 is used.
+   */
+  uint64_t force_update_iburst(uint8_t n=2, uint16_t d=2000);
+
+  /*
     Force get time from server, should only be used in local networks with
     local time server for debugging purpose.
+
+    If use_transmit_timestamp is set to true, the transmit timestamp of the
+    server is used. This is not optimal.
+    If use_transmit_timestamp is set to false (the default), the averaged
+    offset theta from ntp server is used to decide whether to use the
+    transmit timestamp for theta > 1 second or to correct the time using
+    the offset theta. The latter case make sense and is after initial
+    time setting the expected behavior.
 
     returns an error code:
 
@@ -198,7 +230,7 @@ class precise_sntp {
     7: sanity check fail, answer from server is bogus
     8: sanity check fail, server is not syncronized
   */
-  uint8_t force_update();
+  uint8_t force_update(bool use_transmit_timestamp=false);
 
   /*
     Returns the ntp local clock in ntp timestamp format.
