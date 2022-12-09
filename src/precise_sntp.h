@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-12-08
+  Date: 2022-12-09
 
   For more information look at the README.md.
 */
@@ -89,11 +89,11 @@ class precise_sntp {
 
     The poll exponent tau defines the allowed poll interval of 2^tau seconds.
 
-    The method `update` does not do faster polls.
+    The method update() does not do faster polls.
 
-    The method `update_adapt_poll_period` does not do faster polls and also
-    adapt the poll period by incrementing or decrementing the used poll
-    exponent in the defined range.
+    The method update_adapt_poll_period() does not do faster polls.
+    It also adapts the poll period by incrementing or decrementing the used
+    poll exponent in the defined range.
    */
   void set_poll_exponent_range(uint8_t min_poll, uint8_t max_poll);
 
@@ -105,7 +105,7 @@ class precise_sntp {
 
     The returned epoch in other methods is always calculated using millis().
     millis() will overflow after about 50 days and the returned epoch is not
-    correct anymore. To handle this check_millis_overflow() tries to count
+    correct anymore. To handle this, check_millis_overflow() tries to count
     the overflows of millis().
 
     If you do not call update() or update_adapt_poll_period() at least every
@@ -132,7 +132,7 @@ class precise_sntp {
     5: packet was not send
     6: got no answer from server
     7: sanity check fail, answer from server is bogus
-    8: sanity check fail, server is not syncronized
+    8: sanity check fail, server is not synchronized
   */
   uint8_t update();
 
@@ -141,7 +141,7 @@ class precise_sntp {
 
     After the first contact the poll policy of the server is used.
     The smallest allowed poll exponent is used. On successful polls
-    the poll exponent iss incremented. On unsuccessful polls the poll
+    the poll exponent is incremented. On unsuccessful polls the poll
     exponent is decremented.
 
     returns an error code:
@@ -154,7 +154,7 @@ class precise_sntp {
     5: packet was not send
     6: got no answer from server
     7: sanity check fail, answer from server is bogus
-    8: sanity check fail, server is not syncronized
+    8: sanity check fail, server is not synchronized
    */
   uint8_t update_adapt_poll_period();
 
@@ -184,8 +184,42 @@ class precise_sntp {
   bool is_synchronized();
 
   /*
-    Force get time from server, should only be used in local networks with
-    local time server for debugging purpose.
+    This is intended to speed up the initial synchronization.
+    Use it for example in the setup routine.
+
+    It pulls the time from the server n times with a delay of d milliseconds
+    between the pulls. The first time the transmit timestamp of the
+    ntp server is used to set the local clock provided by this library.
+
+    Since no mitigation algorithms (clock filter, clock adjust, ...) are
+    used, it does not make sense to do a high number of pulls. Therefore
+    n is 2 as default and not the typical 8 used by NTP implementations.
+
+    The return value combines results of all pulls: In the least
+    significant 4 Bits is the return value of the first pull.
+    In the next 4 Bits the return value of the second pull. And so on.
+
+    In each 4 Bits the value can be interpreted like the return error codes
+    from force_update.
+
+    Therefore n should not be larger than 15.
+    If it is larger, it will be ignored and 8 is used.
+   */
+  uint64_t force_update_iburst(uint8_t n=2, uint16_t d=2000);
+
+  /*
+    force_update() gets the time from server. It should only be used in
+    local networks with local time server, e. g. for debugging purposes.
+
+    If use_transmit_timestamp is set to true, the transmit timestamp of the
+    server is used. This is not optimal.
+    If use_transmit_timestamp is set to false (the default), the averaged
+    offset theta from ntp server is used to decide whether to use the
+    transmit timestamp or to correct the time using the offset theta.
+    For theta > 1 second the transmit timestamp is used.
+    Otherwise (theta <= 1 second) the time is corrected using theta.
+    The latter case makes sense and is the expected behavior after initial
+    time setting.
 
     returns an error code:
 
@@ -196,9 +230,9 @@ class precise_sntp {
     5: packet was not send
     6: got no answer from server
     7: sanity check fail, answer from server is bogus
-    8: sanity check fail, server is not syncronized
+    8: sanity check fail, server is not synchronized
   */
-  uint8_t force_update();
+  uint8_t force_update(bool use_transmit_timestamp=false);
 
   /*
     Returns the ntp local clock in ntp timestamp format.
