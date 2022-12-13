@@ -1,12 +1,11 @@
 ---
 author: Daniel Mohr
-date: 2022-12-09
+date: 2022-12-13
+url: https://github.com/ug-cp/precise_sntp
 license: BSD 3-Clause License
 ---
 
 # precise_sntp -- precise Simple Network Time Protocol
-
-[[_TOC_]]
 
 This library is an implementation of the Simple Network Time Protocol (SNTPv4)
 for the arduino platform.
@@ -38,7 +37,8 @@ this repository.
 Or just copy the content of this repository to your Arduino libraries, e. g.:
 
 ```shell
-git clone https://.../precise_sntp.git ~/Arduino/libraries/precise_sntp
+git clone https://github.com/ug-cp/precise_sntp.git \
+~/Arduino/libraries/precise_sntp
 ```
 
 ## Usage

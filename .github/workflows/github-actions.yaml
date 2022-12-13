@@ -1,0 +1,106 @@
+name: check_coding_style_test_build
+
+on:
+  push:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      # https://github.com/marketplace/actions/checkout
+      - uses: actions/checkout@v3
+      # https://github.com/marketplace/actions/setup-python
+      - uses: actions/setup-python@v3
+      # https://github.com/pre-commit/action
+      - uses: pre-commit/action@v3.0.0
+
+  arduino-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: arduino/arduino-lint-action@v1
+        with:
+          library-manager: submit
+          #library-manager: update
+          compliance: strict
+
+  arduino_ci:
+    needs: [pre-commit, arduino-lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install dependencies
+        run: |
+          echo "source 'https://rubygems.org'" > Gemfile
+          echo -n "gem 'arduino_ci', git:" >> Gemfile
+          echo " 'https://github.com/Arduino-CI/arduino_ci.git'" >> Gemfile
+          sudo gem install bundler
+          sudo bundle install
+      - name: set env
+        run: |
+          export EXPECT_UNITTESTS=1
+          export EXPECT_EXAMPLES=1
+      - name: mock Udp.h for unittests
+        run: sudo cp -p extras/udp_mock.h /var/lib/gems/*/bundler/gems/arduino_ci-*/cpp/arduino/Udp.h
+      - name: run arduino_ci
+        run: bundle exec arduino_ci.rb --skip-examples-compilation
+
+  arduino-cli:
+    needs: [pre-commit, arduino-lint]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: arduino/setup-arduino-cli@v1
+      - name: prepare arduino-cli
+        run: |
+          arduino-cli help
+          arduino-cli version
+          arduino-cli core install arduino:samd
+          arduino-cli lib install Ethernet WiFiNINA
+      - name: install precise_sntp by linking
+        run: |
+          p=$(pwd)
+          (cd ~/Arduino/libraries/ && ln -s $p)
+      - name: prepare examples
+        run: |
+          echo "#define SECRET_SSID \"foo\"" > examples/get_time_and_print_wifinina/arduino_secrets.h
+          echo "#define SECRET_PASS \"bar\"" >> examples/get_time_and_print_wifinina/arduino_secrets.h
+      - name: compile examples
+        run: "(cd examples && parallel -k -v arduino-cli compile -v -b ::: arduino:samd:mkr1000 arduino:samd:mkrwifi1010 arduino:samd:mkr1000 :::+ get_time_and_print_ethernet get_time_and_print_wifinina get_time_and_print_adapt_interval)"
+
+  release_job:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [arduino_ci, arduino-cli]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v3
+      - name: set parameter as env
+        run: |
+          echo "commit=$GITHUB_SHA" >> $GITHUB_ENV
+          echo "tag=$(grep version library.properties | cut -d "=" -f 2)" >> $GITHUB_ENV
+          echo "body="$(grep sentence library.properties | cut -d "=" -f 2) $(grep paragraph library.properties | cut -d '=' -f 2)"" >> $GITHUB_ENV
+          cat $GITHUB_ENV
+      - uses: ncipollo/release-action@v1
+        with:
+          makeLatest: true
+          commit: ${{ env.commit }}
+          tag: ${{ env.tag }}
+          body: ${{ env.body }}
+
+  deploy_to_other_repo:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    needs: [release_job]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: get repo
+        env:
+          backup_repo: ${{ secrets.backup_repo }}
+        run: |
+          repopath=$(mktemp -d)
+          git clone --bare --mirror "${{ github.server_url }}/${{ github.repository }}.git" "$repopath"
+          (cd $repopath && git push --prune --mirror $backup_repo)
