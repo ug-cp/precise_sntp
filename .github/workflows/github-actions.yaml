@@ -103,4 +103,5 @@ jobs:
         run: |
           repopath=$(mktemp -d)
           git clone --bare --mirror "${{ github.server_url }}/${{ github.repository }}.git" "$repopath"
+          (cd $repopath && git for-each-ref --format 'delete %(refname)' refs/merge-requests | tee >(git update-ref --stdin))
           (cd $repopath && git push --prune --mirror $backup_repo)
