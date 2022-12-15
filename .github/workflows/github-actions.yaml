@@ -67,7 +67,7 @@ jobs:
           echo "#define SECRET_SSID \"foo\"" > examples/get_time_and_print_wifinina/arduino_secrets.h
           echo "#define SECRET_PASS \"bar\"" >> examples/get_time_and_print_wifinina/arduino_secrets.h
       - name: compile examples
-        run: "(cd examples && parallel -k -v arduino-cli compile -v -b ::: arduino:samd:mkr1000 arduino:samd:mkrwifi1010 arduino:samd:mkr1000 :::+ get_time_and_print_ethernet get_time_and_print_wifinina get_time_and_print_adapt_interval)"
+        run: "(cd examples && parallel -k -v arduino-cli compile -v -b ::: arduino:samd:mkr1000 arduino:samd:mkrwifi1010 arduino:samd:mkr1000 arduino:samd:mkr1000 arduino:samd:mkr1000 :::+ get_time_and_print_ethernet get_time_and_print_wifinina get_time_and_print_adapt_interval get_time_rarely_and_print get_time_once_and_print)"
 
   release_job:
     if: ${{ github.ref == 'refs/heads/main' }}

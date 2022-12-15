@@ -75,7 +75,7 @@ arduino-cli:
     - echo "#define SECRET_SSID \"foo\"" > examples/get_time_and_print_wifinina/arduino_secrets.h
     - echo "#define SECRET_PASS \"bar\"" >> examples/get_time_and_print_wifinina/arduino_secrets.h
     # compile examples
-    - "(cd examples && parallel -k -v ~/bin/arduino-cli compile -v -b ::: arduino:samd:mkr1000 arduino:samd:mkrwifi1010 arduino:samd:mkr1000 :::+ get_time_and_print_ethernet get_time_and_print_wifinina get_time_and_print_adapt_interval)"
+    - "(cd examples && parallel -k -v ~/bin/arduino-cli compile -v -b ::: arduino:samd:mkr1000 arduino:samd:mkrwifi1010 arduino:samd:mkr1000 arduino:samd:mkr1000 arduino:samd:mkr1000 :::+ get_time_and_print_ethernet get_time_and_print_wifinina get_time_and_print_adapt_interval get_time_rarely_and_print get_time_once_and_print)"
 
 prepare_release:
   stage: release
