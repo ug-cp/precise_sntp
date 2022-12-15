@@ -1,6 +1,6 @@
 ---
 author: Daniel Mohr
-date: 2022-12-13
+date: 2022-12-15
 url: https://github.com/ug-cp/precise_sntp
 license: BSD 3-Clause License
 ---
@@ -11,6 +11,7 @@ This library is an implementation of the Simple Network Time Protocol (SNTPv4)
 for the arduino platform.
 
 In contrast to other implementations this library allows sub-second precision.
+Further you can set the (S)NTP server to use by IP or by DNS name.
 
 As all (S)NTP implementations for arduino it is simplified.
 
@@ -28,17 +29,27 @@ This should work for about 8926 years, then the check counter will overflow.
 Since no clock adjust is done, the time is not always continuous. Every time
 the time is updated from a time server the time could jump.
 
+* home: [github.com/ug-cp/precise_sntp](https://github.com/ug-cp/precise_sntp)
+* mirror: [gitlab.com/ug-cp/precise_sntp](https://gitlab.com/ug-cp/precise_sntp)
+* Arduino Library Manager: [www.arduino.cc/reference/en/libraries/precise_sntp](https://www.arduino.cc/reference/en/libraries/precise_sntp/)
+
 ## Install
 
-To install this library use `Add .ZIP Library ...` in your Arduino IDE
-to add the zip archive `precise_sntp-main.zip` you can download from
-this repository.
+To use/install this library, you can open the Library Manager in the
+Arduino IDE and install it from there. This is the recommended way.
+
+Or if you use [Arduino CLI](https://arduino.github.io/arduino-cli/) the
+recommended way is `arduino-cli lib install precise_sntp`
+
+Or to install this library use `Add .ZIP Library ...` in your Arduino IDE
+to add the zip archive `....zip` you can download from
+this repository. Or you can use archives from
+[latest release](https://github.com/ug-cp/precise_sntp/releases/latest).
 
 Or just copy the content of this repository to your Arduino libraries, e. g.:
 
 ```shell
-git clone https://github.com/ug-cp/precise_sntp.git \
-~/Arduino/libraries/precise_sntp
+git clone https://github.com/ug-cp/precise_sntp.git ~/Arduino/libraries/precise_sntp
 ```
 
 ## Usage
@@ -78,7 +89,7 @@ void setup() {
 ## Tested
 
 It was tested on SAMD21 (Arduino MKR1000 using Ethernet and
-Arduino MKR WiFi 1010 using WI-FI) -- see examples.
+Arduino MKR WiFi 1010 using WI-FI) -- see [examples](examples).
 
 ## Examples
 
