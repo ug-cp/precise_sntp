@@ -32,8 +32,7 @@ arduino-lint:
     - $APT_GET_INSTALL curl ca-certificates
     - (cd && curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/etc/install.sh | sh)
     - ~/bin/arduino-lint --version
-    - ~/bin/arduino-lint --compliance strict --library-manager submit
-    #- ~/bin/arduino-lint --compliance strict --library-manager update
+    - ~/bin/arduino-lint --compliance strict --library-manager update
 
 arduino_ci:
   stage: test_build

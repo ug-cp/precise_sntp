@@ -2,8 +2,26 @@
 
 # Datatypes (KEYWORD1)
 
+ntp_timestamp_format_struct	KEYWORD1
+timestamp_format		KEYWORD1
+ntp_local_clock_union		KEYWORD1
+
 # Methods and Functions (KEYWORD2)
 
+set_poll_exponent_range	KEYWORD2
+check_millis_overflow	KEYWORD2
+update			KEYWORD2
+update_adapt_poll_period	KEYWORD2
+dget_epoch			KEYWORD2
+tget_epoch			KEYWORD2
+is_synchronized			KEYWORD2
+force_update_iburst		KEYWORD2
+force_update			KEYWORD2
+get_local_clock		KEYWORD2
+get_last_update			KEYWORD2
+
 # Instances (KEYWORD2)
+
+precise_sntp	KEYWORD2
 
 # Constants (LITERAL1)

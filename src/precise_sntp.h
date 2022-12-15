@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-12-09
+  Date: 2022-12-15
 
   For more information look at the README.md.
 */
@@ -237,7 +237,7 @@ class precise_sntp {
   /*
     Returns the ntp local clock in ntp timestamp format.
   */
-  struct ntp_timestamp_format_struct _get_local_clock();
+  struct ntp_timestamp_format_struct get_local_clock();
 
   /*
     return the millis when the last update from the time server was successful

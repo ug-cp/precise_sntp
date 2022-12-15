@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-12-09
+  Date: 2022-12-15
 
   For more information look at the README.md.
 
@@ -153,7 +153,7 @@ uint8_t precise_sntp::force_update(bool use_transmit_timestamp) {
   ntp_packet.as_ntp_packet.stratum = 0; // stratum=0 (unspecified or invalid)
   ntp_packet.as_ntp_packet.poll = _poll_exponent; // poll=6 (default min poll interval)
   ntp_packet.as_ntp_packet.precision = 0xEC;
-  const struct ntp_timestamp_format_struct t1 = _get_local_clock();
+  const struct ntp_timestamp_format_struct t1 = get_local_clock();
   ntp_packet.as_ntp_packet.xmt = t1;
   ntp_timestamp_format_hton(&(ntp_packet.as_ntp_packet.xmt));
   if (_udp->begin(_localport) != 1) {
@@ -205,7 +205,7 @@ uint8_t precise_sntp::force_update(bool use_transmit_timestamp) {
     _next_update_period += 1000;
     return 6;
   }
-  const struct ntp_timestamp_format_struct t4 = _get_local_clock();
+  const struct ntp_timestamp_format_struct t4 = get_local_clock();
   _udp->read(ntp_packet.as_bytes, NTP_PACKET_SIZE);
   // adapt byte order (skipping not used values):
   // ntp_short_format_ntoh(&ntp_packet.as_ntp_packet.rootdelay);
@@ -343,7 +343,7 @@ uint8_t precise_sntp::force_update(bool use_transmit_timestamp) {
   return 0;
 }
 
-struct ntp_timestamp_format_struct precise_sntp::_get_local_clock() {
+struct ntp_timestamp_format_struct precise_sntp::get_local_clock() {
   const uint64_t mtime = (((uint64_t) _millis_overflow_count) << 32) + millis();
   uint64_t my_local_clock;
   my_local_clock =
@@ -356,17 +356,17 @@ struct ntp_timestamp_format_struct precise_sntp::_get_local_clock() {
 }
 
 time_t precise_sntp::get_epoch() {
-  const struct ntp_timestamp_format_struct now = _get_local_clock();
+  const struct ntp_timestamp_format_struct now = get_local_clock();
   return ntp_timestamp_seconds2epoch(now);
 }
 
 double precise_sntp::dget_epoch() {
-  const struct ntp_timestamp_format_struct now = _get_local_clock();
+  const struct ntp_timestamp_format_struct now = get_local_clock();
   return ntp_timestamp_format2doubleepoch(now);
 }
 
 timestamp_format precise_sntp::tget_epoch() {
-  const struct ntp_timestamp_format_struct ntp_now = _get_local_clock();
+  const struct ntp_timestamp_format_struct ntp_now = get_local_clock();
   struct timestamp_format now;
   now.seconds = ntp_timestamp_seconds2epoch(ntp_now);
   now.fraction = ntp_now.fraction;
