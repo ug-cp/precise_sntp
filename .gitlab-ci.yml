@@ -47,7 +47,7 @@ arduino_ci:
     - export EXPECT_UNITTESTS=1
     - export EXPECT_EXAMPLES=1
     - echo "mock Udp.h for unittests"
-    - cp -p extras/udp_mock.h /var/lib/gems/*/bundler/gems/arduino_ci-*/cpp/arduino/Udp.h
+    - cp -p extras/udp_mock.h /var/lib/gems/*/gems/arduino_ci-*/cpp/arduino/Udp.h
     - arduino_ci.rb --skip-examples-compilation
 
 arduino-cli:
