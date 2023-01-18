@@ -1,6 +1,6 @@
 ---
 author: Daniel Mohr
-date: 2022-12-15
+date: 2023-01-18
 url: https://github.com/ug-cp/precise_sntp
 license: BSD 3-Clause License
 ---
@@ -97,9 +97,9 @@ In the folder [examples](examples) you can find some examples.
 
 ## License, Copyright: BSD 3-Clause License
 
-Copyright (c) 2022, Daniel Mohr and
-                    University of Greifswald, Institute of Physics,
-                    Colloidal (dusty) plasma group
+Copyright (c) 2022, 2023 Daniel Mohr and
+                         University of Greifswald, Institute of Physics,
+                         Colloidal (dusty) plasma group
 
 All rights reserved.
 
