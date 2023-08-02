@@ -1,6 +1,6 @@
 /*
   Author: Daniel Mohr
-  Date: 2022-12-15
+  Date: 2023-08-02
 
   For more information look at the README.md.
 
@@ -196,7 +196,10 @@ uint8_t precise_sntp::force_update(bool use_transmit_timestamp) {
   unsigned long start_waiting = millis();
   int packetSize;
   while (((packetSize = _udp->parsePacket()) != NTP_PACKET_SIZE) &&
-	 (start_waiting + 1000)) {
+	 (millis() - start_waiting < 1000)) {
+    // Wait until all data received. But wait maximal 1000 milliseconds.
+    // If millis overflows it is less 1000 milliseconds and
+    // otherwise it waits up to 1000 milliseconds for an answer.
   }
   if (packetSize != NTP_PACKET_SIZE) {
 #ifdef PRECISE_SNTP_DEBUG
