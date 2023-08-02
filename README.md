@@ -1,6 +1,6 @@
 ---
 author: Daniel Mohr
-date: 2023-01-18
+date: 2023-08-02
 url: https://github.com/ug-cp/precise_sntp
 license: BSD 3-Clause License
 ---
