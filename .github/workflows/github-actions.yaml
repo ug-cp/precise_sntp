@@ -10,16 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # https://github.com/marketplace/actions/checkout
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       # https://github.com/marketplace/actions/setup-python
-      - uses: actions/setup-python@v3
+      - uses: actions/setup-python@v4
       # https://github.com/pre-commit/action
       - uses: pre-commit/action@v3.0.0
 
   cppcheck:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: install dependencies
         run: |
           sudo apt-get update
@@ -30,7 +30,8 @@ jobs:
   arduino-lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      # https://github.com/marketplace/actions/arduino-arduino-lint-action
       - uses: arduino/arduino-lint-action@v1
         with:
           library-manager: update
@@ -40,7 +41,7 @@ jobs:
     needs: [pre-commit, arduino-lint]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: install dependencies
         run: |
           echo "source 'https://rubygems.org'" > Gemfile
@@ -61,7 +62,8 @@ jobs:
     needs: [pre-commit, arduino-lint]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      # https://github.com/marketplace/actions/setup-arduino-cli
       - uses: arduino/setup-arduino-cli@v1
       - name: prepare arduino-cli
         run: |
@@ -87,13 +89,14 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: set parameter as env
         run: |
           echo "commit=$GITHUB_SHA" >> $GITHUB_ENV
           echo "tag=$(grep version library.properties | cut -d "=" -f 2)" >> $GITHUB_ENV
           echo "body="$(grep sentence library.properties | cut -d "=" -f 2) $(grep paragraph library.properties | cut -d '=' -f 2)"" >> $GITHUB_ENV
           cat $GITHUB_ENV
+      # https://github.com/ncipollo/release-action
       - uses: ncipollo/release-action@v1
         with:
           makeLatest: true
@@ -106,7 +109,7 @@ jobs:
     needs: [release_job]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: get repo
         env:
           backup_repo: ${{ secrets.backup_repo }}

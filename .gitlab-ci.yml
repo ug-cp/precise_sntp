@@ -15,6 +15,7 @@ pre-commit:
     name: alpine:latest
   script:
     - date
+    - cat /etc/os-release
     # install necessary packages:
     - apk add --no-cache bash gcc git libc-dev npm py3-pip python3-dev
     - pip3 install pre-commit
@@ -28,6 +29,7 @@ cppcheck:
     name: alpine:latest
   script:
     - date
+    - cat /etc/os-release
     # install necessary packages:
     - apk add --no-cache cppcheck
     - cppcheck --suppress="*:test/*" --enable=warning,portability,information --error-exitcode=1 --language=c++ $(find -iname "*.ino") $(find -iname "*.cpp") $(find -iname "*.h")
@@ -39,6 +41,7 @@ arduino-lint:
     name: debian:latest
   script:
     - date
+    - cat /etc/os-release
     - apt-get update
     - $APT_GET_INSTALL curl ca-certificates
     - (cd && curl -fsSL https://raw.githubusercontent.com/arduino/arduino-lint/main/etc/install.sh | sh)
@@ -52,6 +55,7 @@ arduino_ci:
     name: debian:latest
   script:
     - date
+    - cat /etc/os-release
     - apt-get update
     - $APT_GET_INSTALL ruby build-essential
     - gem install bundler arduino_ci
@@ -68,6 +72,7 @@ arduino-cli:
     name: debian:latest
   script:
     - date
+    - cat /etc/os-release
     - apt-get update
     - $APT_GET_INSTALL curl ca-certificates parallel
     - (cd && curl -fsSL https://raw.githubusercontent.com/arduino/arduino-cli/master/install.sh | sh)
@@ -95,6 +100,7 @@ prepare_release:
     name: alpine:latest
   script:
     - date
+    - cat /etc/os-release
     - cat library.properties
     - echo "EXTRA_DESCRIPTION=$(grep sentence library.properties | cut -d "=" -f 2) $(grep paragraph library.properties | cut -d '=' -f 2)" > variables.env
     - echo "TAG=$(grep version library.properties | cut -d "=" -f 2)" >> variables.env
@@ -117,6 +123,7 @@ release_job:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   script:
     - date
+    - cat /etc/os-release
     - echo "running release_job for $TAG"
   release:
     name: 'Release $TAG'
