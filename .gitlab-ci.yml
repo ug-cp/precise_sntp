@@ -21,6 +21,17 @@ pre-commit:
     - pre-commit --version
     - pre-commit run --all-files
 
+cppcheck:
+  stage: check_coding_style
+  image:
+    # https://hub.docker.com/_/alpine
+    name: alpine:latest
+  script:
+    - date
+    # install necessary packages:
+    - apk add --no-cache cppcheck
+    - cppcheck --suppress="*:test/*" --enable=warning,portability,information --error-exitcode=1 --language=c++ $(find -iname "*.ino") $(find -iname "*.cpp") $(find -iname "*.h")
+
 arduino-lint:
   stage: check_coding_style
   image:

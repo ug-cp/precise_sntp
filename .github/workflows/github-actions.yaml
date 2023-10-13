@@ -16,6 +16,17 @@ jobs:
       # https://github.com/pre-commit/action
       - uses: pre-commit/action@v3.0.0
 
+  cppcheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: install dependencies
+        run: |
+          apt-get update
+          apt-get install cppcheck
+      - name: run cppcheck
+        run: cppcheck --suppress="*:test/*" --enable=warning,portability,information --error-exitcode=1 --language=c++ $(find -iname "*.ino") $(find -iname "*.cpp") $(find -iname "*.h")
+
   arduino-lint:
     runs-on: ubuntu-latest
     steps:
