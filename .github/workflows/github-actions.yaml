@@ -22,8 +22,8 @@ jobs:
       - uses: actions/checkout@v3
       - name: install dependencies
         run: |
-          apt-get update
-          apt-get install cppcheck
+          sudo apt-get update
+          sudo apt-get install cppcheck
       - name: run cppcheck
         run: cppcheck --suppress="*:test/*" --enable=warning,portability,information --error-exitcode=1 --language=c++ $(find -iname "*.ino") $(find -iname "*.cpp") $(find -iname "*.h")
 
